@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Name Picker</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Alef&display=swap');
+        body {
+            background-color: #1E90FF;
+            color: white;
+            font-family: 'Alef', Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            margin: 50px auto;
+            padding: 20px;
+            width: 80%;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        h1 {
+            font-size: 2.5em;
+        }
+        textarea {
+            width: 80%;
+            height: 100px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+        #wheel-canvas {
+            margin: 20px auto;
+            display: block;
+        }
+        #confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        #running-names {
+            position: relative;
+            overflow: hidden;
+            height: 50px;
+            width: 100%;
+            margin: 20px auto;
+        }
+        #running-names div {
+            position: absolute;
+            white-space: nowrap;
+            font-size: 2em;
+            width: 100%;
+            text-align: center;
+        }
+        .winner-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 30vh; /* 30% of the viewport height */
+        }
+        .winner {
+            font-size: 3em;
+            font-weight: bold;
+            margin-top: 10px;
+            color: black;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+        .winner-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            position: fixed;
+            top: 10px;
+            width: 100%;
+            left: 0;
+        }
+        #logo {
+            margin: 20px auto;
+            display: block;
+            max-width: 100px;
+        }
+        #countdown {
+            font-size: 3em;
+            font-weight: bold;
+        }
+        #winner-title {
+            font-size: 2em;
+            color: white;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="main-container">
+        <h1>NAME PICKER</h1>
+        <p>Name Picker is an easy-to-use online tool to draw a random name from a list of names. You can select a name by spinning a wheel or instantly pick a winner.
+            Choose multiple names at once in the raffle generator, up to 10 names per draw. To start, add your list of names and raffle settings in the Random Picker settings, and spin the wheel or start raffle to draw names.</p>
+        <button id="settings-button">Start Settings</button>
+    </div>
+
+    <div id="settings-screen" class="container hidden">
+        <h2>Settings</h2>
+        <div id="name-input-screen">
+            <h3>Enter Names</h3>
+            <textarea id="names-input" placeholder="Enter names separated by commas..."></textarea><br>
+            <input type="file" id="file-input"><br>
+            <button id="save-names-button">Save Names</button>
+        </div>
+        
+        <div id="winner-settings-screen" class="hidden">
+            <h3>Set Winners</h3>
+            <label for="number-of-winners">Number of Winners:</label>
+            <input type="number" id="number-of-winners" value="1" min="1" max="10"><br>
+            <label for="allow-duplicates">Allow Duplicate Winners:</label>
+            <input type="checkbox" id="allow-duplicates"><br>
+            <button id="save-winner-settings-button">Save Winner Settings</button>
+        </div>
+        
+        <div id="animation-settings-screen" class="hidden">
+            <h3>Choose Animation</h3>
+            <label for="animation-type">Animation Type:</label>
+            <select id="animation-type">
+                <option value="wheel">Wheel</option>
+                <option value="running-names">Running Names</option>
+                <option value="countdown">Countdown</option>
+            </select><br>
+            <label for="countdown-seconds" class="hidden">Countdown Seconds:</label>
+            <input type="number" id="countdown-seconds" class="hidden" value="10" min="1"><br>
+            <label for="final-screen-color">Final Screen Color:</label>
+            <input type="color" id="final-screen-color" value="#1E90FF"><br>
+            <label for="final-screen-image">Final Screen Image:</label>
+            <input type="file" id="final-screen-image"><br>
+            <button id="save-animation-settings-button">Save Animation Settings</button>
+        </div>
+        
+        <div id="extra-options-screen" class="hidden">
+            <h3>Extra Options</h3>
+            <label for="add-title">Add Title:</label>
+            <input type="text" id="add-title"><br>
+            <label for="add-logo">Add Logo:</label>
+            <input type="file" id="add-logo-file"><br>
+            <label for="enable-sound">Enable Sound:</label>
+            <input type="checkbox" id="enable-sound"><br>
+            <label for="sort-results">Sort Results:</label>
+            <input type="checkbox" id="sort-results"><br>
+            <label for="disable-confetti">Disable Confetti:</label>
+            <input type="checkbox" id="disable-confetti"><br>
+            <button id="save-extra-options-button">Save Extra Options</button>
+        </div>
+        
+        <button id="start-draw-button" class="hidden">Start Draw</button>
+    </div>
+
+    <div id="results-screen" class="container hidden">
+        <h2 id="results-title" class="hidden"></h2>
+        <img id="results-logo" src="" alt="Logo" class="hidden">
+        <div class="winner-buttons">
+            <button id="draw-again-button">Draw Again</button>
+            <button id="start-new-draw-button">Start New Draw</button>
+            <button id="save-winner-button">Save Winner</button>
+        </div>
+        <div id="animation-screen">
+            <canvas id="wheel-canvas" class="hidden" width="500" height="500"></canvas>
+            <div id="running-names" class="hidden"><div></div></div>
+            <div id="countdown" class="hidden"></div>
+        </div>
+        <div id="winners-list" class="winner-container hidden">
+            <div id="winner-title"></div>
+            <div id="winner-name" class="winner"></div>
+        </div>
+    </div>
+
+    <canvas id="confetti" class="hidden"></canvas>
+
+    <audio id="clap-sound" src="https://www.soundjay.com/human/applause-8.mp3" preload="auto"></audio>
+    <audio id="wheel-sound" src="wheel-sound.mp3" preload="auto"></audio>
+    <audio id="running-names-sound" src="running-names-sound.mp3" preload="auto"></audio>
+    <audio id="drumroll-sound" src="drumroll.mp3" preload="auto"></audio>
+
+    <script>
+        document.getElementById('settings-button').onclick = function() {
+            document.getElementById('main-container').classList.add('hidden');
+            document.getElementById('settings-screen').classList.remove('hidden');
+        };
+
+        document.getElementById('save-names-button').onclick = function() {
+            let names = document.getElementById('names-input').value.split(',').map(name => name.trim()).filter(name => name);
+            let file = document.getElementById('file-input').files[0];
+
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    names = e.target.result.split('\n').map(name => name.trim()).filter(name => name);
+                    saveNames(names);
+                };
+                reader.readAsText(file);
+            } else {
+                saveNames(names);
+            }
+        };
+
+        function saveNames(names) {
+            if (names.length > 0) {
+                window.names = names;
+                document.getElementById('name-input-screen').classList.add('hidden');
+                document.getElementById('winner-settings-screen').classList.remove('hidden');
+            } else {
+                alert('Please enter or upload names.');
+            }
+        }
+
+        document.getElementById('save-winner-settings-button').onclick = function() {
+            window.numberOfWinners = parseInt(document.getElementById('number-of-winners').value);
+            window.allowDuplicates = document.getElementById('allow-duplicates').checked;
+            document.getElementById('winner-settings-screen').classList.add('hidden');
+            document.getElementById('animation-settings-screen').classList.remove('hidden');
+        };
+
+        document.getElementById('animation-type').onchange = function() {
+            if (document.getElementById('animation-type').value === 'countdown') {
+                document.getElementById('countdown-seconds').classList.remove('hidden');
+                document.querySelector('label[for="countdown-seconds"]').classList.remove('hidden');
+            } else {
+                document.getElementById('countdown-seconds').classList.add('hidden');
+                document.querySelector('label[for="countdown-seconds"]').classList.add('hidden');
+            }
+        };
+
+        document.getElementById('save-animation-settings-button').onclick = function() {
+            window.animationType = document.getElementById('animation-type').value;
+            window.countdownSeconds = parseInt(document.getElementById('countdown-seconds').value);
+            window.finalScreenColor = document.getElementById('final-screen-color').value;
+            let finalScreenImage = document.getElementById('final-screen-image').files[0];
+            if (finalScreenImage) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    window.finalScreenImage = e.target.result;
+                };
+                reader.readAsDataURL(finalScreenImage);
+            } else {
+                window.finalScreenImage = null;
+            }
+            document.getElementById('animation-settings-screen').classList.add('hidden');
+            document.getElementById('extra-options-screen').classList.remove('hidden');
+        };
+
+        document.getElementById('save-extra-options-button').onclick = function() {
+            window.addTitle = document.getElementById('add-title').value;
+            let logoFile = document.getElementById('add-logo-file').files[0];
+            if (logoFile) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    window.logoSrc = e.target.result;
+                    document.getElementById('results-logo').src = e.target.result;
+                    document.getElementById('results-logo').classList.remove('hidden');
+                };
+                reader.readAsDataURL(logoFile);
+            } else {
+                window.logoSrc = null;
+            }
+            window.enableSound = document.getElementById('enable-sound').checked;
+            window.sortResults = document.getElementById('sort-results').checked;
+            window.disableConfetti = document.getElementById('disable-confetti').checked;
+            document.getElementById('extra-options-screen').classList.add('hidden');
+            document.getElementById('start-draw-button').classList.remove('hidden');
+        };
+
+        document.getElementById('start-draw-button').onclick = function() {
+            startDraw();
+        };
+
+        function startDraw() {
+            let winners = [];
+            if (window.allowDuplicates) {
+                for (let i = 0; i < window.numberOfWinners; i++) {
+                    winners.push(window.names[Math.floor(Math.random() * window.names.length)]);
+                }
+            } else {
+                let shuffledNames = window.names.sort(() => 0.5 - Math.random());
+                winners = shuffledNames.slice(0, window.numberOfWinners);
+            }
+            showResults(winners);
+        }
+
+        function showResults(winners) {
+            document.getElementById('settings-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+            if (window.finalScreenImage) {
+                document.getElementById('results-screen').style.backgroundImage = `url(${window.finalScreenImage})`;
+                document.getElementById('results-screen').style.backgroundSize = 'cover';
+            } else {
+                document.getElementById('results-screen').style.backgroundColor = window.finalScreenColor;
+                document.getElementById('results-screen').style.backgroundImage = '';
+            }
+
+            if (window.logoSrc) {
+                document.getElementById('results-logo').src = window.logoSrc;
+                document.getElementById('results-logo').classList.remove('hidden');
+            } else {
+                document.getElementById('results-logo').classList.add('hidden');
+            }
+
+            if (window.addTitle) {
+                document.getElementById('results-title').innerText = window.addTitle;
+                document.getElementById('results-title').classList.remove('hidden');
+            } else {
+                document.getElementById('results-title').classList.add('hidden');
+            }
+
+            if (window.animationType === 'wheel') {
+                playSound('wheel-sound');
+                drawWheel(winners);
+            } else if (window.animationType === 'running-names') {
+                playSound('running-names-sound');
+                runNames(winners);
+            } else if (window.animationType === 'countdown') {
+                playSound('drumroll-sound');
+                countdown(winners);
+            }
+        }
+
+        function playSound(soundId) {
+            let sound = document.getElementById(soundId);
+            sound.currentTime = 0;
+            sound.play();
+        }
+
+        function stopSound(soundId) {
+            let sound = document.getElementById(soundId);
+            sound.pause();
+            sound.currentTime = 0;
+        }
+
+        function drawWheel(winners) {
+            let canvas = document.getElementById('wheel-canvas');
+            canvas.classList.remove('hidden');
+            let ctx = canvas.getContext('2d');
+            let names = window.names;
+            let arc = Math.PI / (names.length / 2);
+            let angle = 0;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.font = '16px Alef, Arial, sans-serif';
+
+            for (let i = 0; i < names.length; i++) {
+                let angle = i * arc;
+                ctx.fillStyle = getRandomColor();
+                ctx.beginPath();
+                ctx.arc(250, 250, 240, angle, angle + arc, false);
+                ctx.arc(250, 250, 0, angle + arc, angle, true);
+                ctx.stroke();
+                ctx.fill();
+                ctx.save();
+                ctx.translate(250 + Math.cos(angle + arc / 2) * 120, 250 + Math.sin(angle + arc / 2) * 120);
+                ctx.rotate(angle + arc / 2 + Math.PI / 2);
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(names[i], 0, 0);
+                ctx.restore();
+            }
+
+            let spinTime = 0;
+            let spinTimeTotal = Math.random() * 3 + 4 * 1000;
+            let spinAngleStart = Math.random() * 10 + 10;
+            let startAngle = 0;
+
+            function rotateWheel() {
+                spinTime += 30;
+                if (spinTime >= spinTimeTotal) {
+                    let selectedNames = [];
+                    for (let i = 0; i < window.numberOfWinners; i++) {
+                        selectedNames.push(names[Math.floor(Math.random() * names.length)]);
+                    }
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    canvas.classList.add('hidden');
+                    stopSound('wheel-sound');
+                    displayWinner(selectedNames);
+                    return;
+                }
+
+                let spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
+                startAngle += (spinAngle * Math.PI / 180);
+                ctx.save();
+                ctx.translate(250, 250);
+                ctx.rotate(startAngle);
+                ctx.translate(-250, -250);
+                drawWheelNames();
+                ctx.restore();
+                setTimeout(rotateWheel, 30);
+            }
+
+            rotateWheel();
+        }
+
+        function drawWheelNames() {
+            let ctx = document.getElementById('wheel-canvas').getContext('2d');
+            let arc = Math.PI / (window.names.length / 2);
+
+            ctx.clearRect(0, 0, 500, 500);
+            for (let i = 0; i < window.names.length; i++) {
+                let angle = i * arc;
+                ctx.fillStyle = getRandomColor();
+                ctx.beginPath();
+                ctx.arc(250, 250, 240, angle, angle + arc, false);
+                ctx.arc(250, 250, 0, angle + arc, angle, true);
+                ctx.stroke();
+                ctx.fill();
+                ctx.save();
+                ctx.translate(250 + Math.cos(angle + arc / 2) * 120, 250 + Math.sin(angle + arc / 2) * 120);
+                ctx.rotate(angle + arc / 2);
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(window.names[i], 0, 0);
+                ctx.restore();
+            }
+        }
+
+        function runNames(winners) {
+            let runningNamesDiv = document.getElementById('running-names');
+            runningNamesDiv.classList.remove('hidden');
+            let runningNamesContent = runningNamesDiv.querySelector('div');
+            let names = window.names;
+            runningNamesContent.innerHTML = '';
+
+            let animationDuration = 3000;
+            let index = 0;
+
+            function animate() {
+                if (index >= names.length) {
+                    index = 0;
+                }
+                let name = names[index];
+                runningNamesContent.innerText = name;
+
+                setTimeout(() => {
+                    index++;
+                    animate();
+                }, animationDuration / names.length);
+            }
+
+            animate();
+
+            setTimeout(() => {
+                runningNamesDiv.classList.add('hidden');
+                stopSound('running-names-sound');
+                displayWinner(winners);
+            }, animationDuration);
+        }
+
+        function countdown(winners) {
+            let countdownDiv = document.getElementById('countdown');
+            countdownDiv.classList.remove('hidden');
+            countdownDiv.innerHTML = '<h3>Counting down...</h3>';
+
+            let count = window.countdownSeconds;
+            let countdownInterval = setInterval(function() {
+                countdownDiv.innerHTML = '<h3>' + count + '</h3>';
+                count--;
+                if (count < 0) {
+                    clearInterval(countdownInterval);
+                    countdownDiv.classList.add('hidden');
+                    stopSound('drumroll-sound');
+                    displayWinner(winners);
+                }
+            }, 1000);
+        }
+
+        function displayWinner(winners) {
+            let winnerTitle = document.getElementById('winner-title');
+            if (winners.length > 1) {
+                winnerTitle.innerText = "And the winners are...";
+            } else {
+                winnerTitle.innerText = "And the winner is...";
+            }
+            winnerTitle.classList.remove('hidden');
+
+            let winnersList = document.getElementById('winner-name');
+            winnersList.innerHTML = winners.join('<br>');
+            winnersList.classList.remove('hidden');
+            let winnersContainer = document.getElementById('winners-list');
+            winnersContainer.classList.remove('hidden');
+            if (window.enableSound) {
+                document.getElementById('clap-sound').play();
+            }
+            if (!window.disableConfetti) {
+                showConfetti();
+            }
+        }
+
+        function getRandomColor() {
+            let letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        function showConfetti() {
+            let confettiCanvas = document.getElementById('confetti');
+            confettiCanvas.classList.remove('hidden');
+            let ctx = confettiCanvas.getContext('2d');
+            let confettiCount = 300;
+            let confetti = [];
+
+            for (let i = 0; i < confettiCount; i++) {
+                confetti.push({
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    r: Math.random() * 5 + 2,
+                    d: Math.random() * confettiCount,
+                    color: getRandomColor()
+                });
+            }
+
+            function drawConfetti() {
+                ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                for (let i = 0; i < confettiCount; i++) {
+                    let c = confetti[i];
+                    ctx.fillStyle = c.color;
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2, true);
+                    ctx.fill();
+                }
+                updateConfetti();
+            }
+
+            function updateConfetti() {
+                for (let i = 0; i < confettiCount; i++) {
+                    let c = confetti[i];
+                    c.y += Math.cos(c.d) + 1 + c.r / 2;
+                    c.x += Math.sin(c.d);
+
+                    if (c.y > window.innerHeight) {
+                        confetti[i] = { x: Math.random() * window.innerWidth, y: 0, r: c.r, d: c.d, color: c.color };
+                    }
+                }
+            }
+
+            function animateConfetti() {
+                drawConfetti();
+                requestAnimationFrame(animateConfetti);
+            }
+
+            animateConfetti();
+        }
+
+        function easeOut(t, b, c, d) {
+            t /= d;
+            t--;
+            return c * (t * t * t + 1) + b;
+        }
+
+        document.getElementById('draw-again-button').onclick = function() {
+            document.getElementById('winner-title').classList.add('hidden');
+            document.getElementById('winner-name').classList.add('hidden');
+            document.getElementById('winner-name').innerHTML = '';
+            document.getElementById('confetti').classList.add('hidden');
+            startDraw();
+        };
+
+        document.getElementById('start-new-draw-button').onclick = function() {
+            document.getElementById('results-screen').classList.add('hidden');
+            document.getElementById('main-container').classList.remove('hidden');
+            location.reload();
+        };
+
+        document.getElementById('save-winner-button').onclick = function() {
+            let winners = document.getElementById('winner-name').innerText;
+            let now = new Date();
+            let dateString = now.getFullYear() + '-' + 
+                            ('0' + (now.getMonth() + 1)).slice(-2) + '-' + 
+                            ('0' + now.getDate()).slice(-2) + '_' + 
+                            ('0' + now.getHours()).slice(-2) + '-' + 
+                            ('0' + now.getMinutes()).slice(-2) + '-' + 
+                            ('0' + now.getSeconds()).slice(-2);
+            let filename = 'winners_' + dateString + '.txt';
+            let blob = new Blob([winners], { type: 'text/plain' });
+            let anchor = document.createElement('a');
+            anchor.download = filename;
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.target = '_blank';
+            anchor.style.display = 'none';
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+        };
+    </script>
+</body>
+</html>
