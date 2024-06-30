@@ -5,41 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Random Name Picker</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Alef&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap');
+        
         body {
-            background-color: #1E90FF;
-            color: white;
-            font-family: 'Alef', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            font-family: 'Poppins', sans-serif;
             text-align: center;
             padding: 20px;
+            margin: 0;
         }
+
         .container {
             margin: 50px auto;
             padding: 20px;
             width: 80%;
-            background-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
+            backdrop-filter: blur(10px);
         }
+
         h1 {
-            font-size: 2.5em;
+            font-size: 3em;
+            margin-bottom: 0.5em;
         }
+
+        p {
+            font-size: 1.2em;
+            margin-bottom: 2em;
+        }
+
         textarea {
             width: 80%;
             height: 100px;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 20px;
         }
+
         button {
-            padding: 10px 20px;
-            font-size: 1em;
-            margin: 10px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 10px;
             cursor: pointer;
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            color: #fff;
+            transition: transform 0.2s;
+            margin: 10px;
         }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
         .hidden {
-            display: none;
+            display: none !important;
         }
+
         #wheel-canvas {
-            margin: 20px auto;
+            margin: 80px auto 20px;
             display: block;
+            border-radius: 50%;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            border: 5px solid white;
         }
+
         #confetti {
             position: fixed;
             top: 0;
@@ -48,13 +81,17 @@
             height: 100%;
             pointer-events: none;
         }
+
         #running-names {
             position: relative;
             overflow: hidden;
-            height: 50px;
-            width: 100%;
+            height: 150px; /* הגדלת שטח לריצה */
+            width: 80%;
             margin: 20px auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
         }
+
         #running-names div {
             position: absolute;
             white-space: nowrap;
@@ -62,51 +99,74 @@
             width: 100%;
             text-align: center;
         }
+
         .winner-container {
             position: relative;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 30vh; /* 30% of the viewport height */
+            height: 30vh;
         }
+
         .winner {
             font-size: 3em;
             font-weight: bold;
             margin-top: 10px;
-            color: black;
-            background-color: white;
+            color: #000;
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
             padding: 20px;
             border-radius: 10px;
             display: inline-block;
+            animation: color-change 2s infinite;
         }
-        .winner-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-            position: fixed;
-            top: 10px;
-            width: 100%;
-            left: 0;
-        }
+
         #logo {
             margin: 20px auto;
             display: block;
             max-width: 100px;
         }
+
         #countdown {
             font-size: 3em;
             font-weight: bold;
         }
+
         #winner-title {
             font-size: 2em;
             color: white;
             margin-top: 20px;
         }
+
+        @keyframes color-change {
+            0% { color: #ff416c; }
+            25% { color: #ff4b2b; }
+            50% { color: #1e3c72; }
+            75% { color: #2a5298; }
+            100% { color: #ff416c; }
+        }
+
+        .top-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #results-logo {
+            max-width: calc(100% - 4cm); /* מתחת לגודל התמונה פחות 2 ס"מ מכל צד */
+            margin: 0 auto;
+            display: block;
+        }
     </style>
 </head>
 <body>
+    <div class="top-buttons">
+        <button id="draw-again-button" class="hidden">DRAW AGAIN</button>
+        <button id="start-new-draw-button" class="hidden">START NEW DRAW</button>
+        <button id="save-winner-button" class="hidden">SAVE WINNER</button>
+    </div>
+
     <div class="container" id="main-container">
         <h1>NAME PICKER</h1>
         <p>Name Picker is an easy-to-use online tool to draw a random name from a list of names. You can select a name by spinning a wheel or instantly pick a winner.
@@ -170,11 +230,6 @@
     <div id="results-screen" class="container hidden">
         <h2 id="results-title" class="hidden"></h2>
         <img id="results-logo" src="" alt="Logo" class="hidden">
-        <div class="winner-buttons">
-            <button id="draw-again-button">Draw Again</button>
-            <button id="start-new-draw-button">Start New Draw</button>
-            <button id="save-winner-button">Save Winner</button>
-        </div>
         <div id="animation-screen">
             <canvas id="wheel-canvas" class="hidden" width="500" height="500"></canvas>
             <div id="running-names" class="hidden"><div></div></div>
@@ -323,6 +378,10 @@
                 document.getElementById('results-title').classList.add('hidden');
             }
 
+            document.getElementById('draw-again-button').classList.remove('hidden');
+            document.getElementById('start-new-draw-button').classList.remove('hidden');
+            document.getElementById('save-winner-button').classList.remove('hidden');
+
             if (window.animationType === 'wheel') {
                 playSound('wheel-sound');
                 drawWheel(winners);
@@ -358,20 +417,21 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 2;
-            ctx.font = '16px Alef, Arial, sans-serif';
+            ctx.font = 'bold 16px Arial';
+
+            let colors = ['#FF6347', '#FFD700', '#1E90FF', '#32CD32', '#FF69B4', '#8A2BE2', '#FF4500', '#7FFF00', '#D2691E', '#00CED1'];
 
             for (let i = 0; i < names.length; i++) {
                 let angle = i * arc;
-                ctx.fillStyle = getRandomColor();
+                ctx.fillStyle = colors[i % colors.length];
                 ctx.beginPath();
                 ctx.arc(250, 250, 240, angle, angle + arc, false);
                 ctx.arc(250, 250, 0, angle + arc, angle, true);
-                ctx.stroke();
                 ctx.fill();
                 ctx.save();
                 ctx.translate(250 + Math.cos(angle + arc / 2) * 120, 250 + Math.sin(angle + arc / 2) * 120);
                 ctx.rotate(angle + arc / 2 + Math.PI / 2);
-                ctx.fillStyle = 'black';
+                ctx.fillStyle = 'white';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(names[i], 0, 0);
@@ -379,8 +439,8 @@
             }
 
             let spinTime = 0;
-            let spinTimeTotal = Math.random() * 3 + 4 * 1000;
-            let spinAngleStart = Math.random() * 10 + 10;
+            let spinTimeTotal = 3000; // זמן סיבוב כולל 3 שניות
+            let spinAngleStart = (Math.random() * 10 + 10) * 2;
             let startAngle = 0;
 
             function rotateWheel() {
@@ -414,25 +474,31 @@
         function drawWheelNames() {
             let ctx = document.getElementById('wheel-canvas').getContext('2d');
             let arc = Math.PI / (window.names.length / 2);
+            let colors = ['#FF6347', '#FFD700', '#1E90FF', '#32CD32', '#FF69B4', '#8A2BE2', '#FF4500', '#7FFF00', '#D2691E', '#00CED1'];
 
             ctx.clearRect(0, 0, 500, 500);
             for (let i = 0; i < window.names.length; i++) {
                 let angle = i * arc;
-                ctx.fillStyle = getRandomColor();
+                ctx.fillStyle = colors[i % colors.length];
                 ctx.beginPath();
                 ctx.arc(250, 250, 240, angle, angle + arc, false);
                 ctx.arc(250, 250, 0, angle + arc, angle, true);
-                ctx.stroke();
                 ctx.fill();
                 ctx.save();
                 ctx.translate(250 + Math.cos(angle + arc / 2) * 120, 250 + Math.sin(angle + arc / 2) * 120);
                 ctx.rotate(angle + arc / 2);
-                ctx.fillStyle = 'black';
+                ctx.fillStyle = 'white';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(window.names[i], 0, 0);
                 ctx.restore();
             }
+        }
+
+        function easeOut(t, b, c, d) {
+            t /= d;
+            t--;
+            return c * (t * t * t + 1) + b;
         }
 
         function runNames(winners) {
@@ -505,6 +571,9 @@
             if (!window.disableConfetti) {
                 showConfetti();
             }
+            document.getElementById('wheel-canvas').classList.add('hidden');
+            document.getElementById('running-names').classList.add('hidden');
+            document.getElementById('countdown').classList.add('hidden');
         }
 
         function getRandomColor() {
@@ -539,7 +608,7 @@
                     let c = confetti[i];
                     ctx.fillStyle = c.color;
                     ctx.beginPath();
-                    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2, true);
+                    ctx.rect(c.x, c.y, c.r, c.r * 5);
                     ctx.fill();
                 }
                 updateConfetti();
@@ -563,12 +632,6 @@
             }
 
             animateConfetti();
-        }
-
-        function easeOut(t, b, c, d) {
-            t /= d;
-            t--;
-            return c * (t * t * t + 1) + b;
         }
 
         document.getElementById('draw-again-button').onclick = function() {
